@@ -28,10 +28,9 @@ We make the assumption that an outside service is depositing the flat files on a
 The project requires pipenv as means to manage dependencies. A folder for logs and imports is needed as well. 
 
 $ `
-pip install pipenv &&
-git pull && 
-cd TrigifyTest &&
-mkdir logs imports && 
+git clone git@github.com:Botman-Hotman/DataProcessor.git &&  
+cd DataProcessor && 
+mkdir logs imports &&  
 touch .env
 `
 
