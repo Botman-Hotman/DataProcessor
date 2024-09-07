@@ -1,0 +1,41 @@
+version: '4'
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: psg01
+    restart: always
+    environment:
+      POSTGRES_USER: dev-user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: dev_db
+    ports:
+      - "5432:5432"
+    expose:
+      - "5432"
+# Uncomment to persist database
+#    volumes:
+#      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - TrigifyTest
+
+  app:
+    container_name: app
+    build: .
+    command: python main.py
+    # Uncomment to persist database
+#    volumes:
+#      - app-data:/app
+    ports:
+      - "8000:8000"
+    restart: always
+    depends_on:
+      - postgres
+    networks:
+      - TrigifyTest
+
+networks:
+    TrigifyTest:
+# Uncomment to persist database
+#volumes:
+#  postgres-data:
+#  app-data
