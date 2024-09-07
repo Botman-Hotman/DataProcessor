@@ -25,12 +25,12 @@ We make the assumption that an outside service is depositing the flat files on a
 ## Sql
 
 # Setup
-The project requires pipenv as means to manage dependencies. A folder for logs and imports is needed as well. 
+The project requires pipenv as means to manage dependencies. A folder for logs and imports /exports is needed as well. Not included in the push as it would be bad dev practice.
 
 $ `
 git clone git@github.com:Botman-Hotman/DataProcessor.git &&  
 cd DataProcessor && 
-mkdir logs imports &&  
+mkdir logs imports exports &&  
 touch .env
 `
 
@@ -50,6 +50,7 @@ touch .env
 Spin up a docker instance of postgres and the directory watcher. 
 There is an option to use volumes to persist the data. Check the commmented lines within the docker-compose.yamml. 
 If this services is to interact with other docker containers they must all use the network created there too.
+
 $ `docker-compose up -d`
 
 ### check that the images are up
