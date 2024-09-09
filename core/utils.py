@@ -19,7 +19,7 @@ def flatten_list(nested_list) -> list:
             flat_list.extend(flatten_list(item))  # Recursively flatten
         elif isinstance(item, str):
             # Strip whitespace and convert to lowercase
-            flat_list.append(item.strip().lower().replace('"', ''))
+            flat_list.append(item.strip().lower())
         else:
             flat_list.append(item)
     return flat_list

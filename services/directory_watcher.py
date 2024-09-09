@@ -1,6 +1,7 @@
 import asyncio
 import os
 import logging
+import time
 from asyncio import AbstractEventLoop, Future
 
 from watchdog.observers import Observer
@@ -22,7 +23,7 @@ class WatcherHandler(FileSystemEventHandler):
         if not event.is_directory:
             if event.src_path.endswith('.csv'):
                 logging.info(f"Detected new CSV file: {os.path.basename(event.src_path)}")
-
+                time.sleep(2)
                 future: Future = asyncio.run_coroutine_threadsafe(
                     import_data_to_staging(event.src_path), self.loop
                 )

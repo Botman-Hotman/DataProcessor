@@ -35,7 +35,8 @@ touch .env
 `
 
 # Environment Vars
-The following vars are designed to work for the docker container, adjust if you wish to use a local instance of postgres
+The following vars are designed to work for the docker container, adjust if you wish to use a local instance of postgres.
+If **dev** is true it will drop and recreate all the tables within the database on every startup.
 
 *  dev = True
 *  debug_logs = False
@@ -48,7 +49,7 @@ The following vars are designed to work for the docker container, adjust if you 
 
 # Start Up
 Spin up a docker instance of postgres and the directory watcher. 
-There is an option to use volumes to persist the data. Check the commmented lines within the docker-compose.yamml. 
+There is an option to use volumes to persist the data. Check the commented lines within the docker-compose.yamml. 
 If this services is to interact with other docker containers they must all use the network created there too.
 
 $ `docker-compose up -d`
@@ -59,21 +60,32 @@ $ `docker ps`
 We make the assumption that a job will push the flat file into the import folder. The below command simulates a new file entering the directory.
 Put the target file in the root of the project and run below. The container is named **'app'** as defined in the docker-compose file.
 
+**NOTES**: _I think the watcher is quicker than what the cp command of docker is. 
+A few times it was only pick up some of the file and not the full 5000 rows. 
+If this happens I recommend truncating the table in the db and trying it again._ 
+
 $ `docker cp 2019_free_title_data.csv app:app/imports`
 
 ### check the logs to see if the process ran successfully
 
 $ `docker-compose logs`
 
-### Tear down everything successfully and remove the app image.
 
-$ `docker-compose down && docker rmi trigifytest-app`
+
+### create data warehouse
+Now we have imported data into the staging schema we can run the next command to generate the data warehouse 
+and run the ETL pipelines. After this runs you will see the target tables in the database under datawarehouse schema. 
+
+$ `docker exec -it trigifytest-app python main.py --pipeline`
+
 
 # Analysis
-Most of the requested analysis wanted is sufficient in views. However, if this data was called regularly we could use materialised views.
-If the system became extremely large the views could be pivoted into tables through the use of models and fixed schemas. 
-I have provided somme examples of how you could make these types of tables in the models directory. Clustering could be applied on any categorical data. 
+This will run the correct scripts to create views in the data warehouse of the target questions.
+
+$ `docker exec -it trigifytest-app python main.py --analysis`
 
 
+# Tear down 
+remove the container and remove the app image.
 
-
+$ `docker-compose down && docker rmi trigifytest-app`

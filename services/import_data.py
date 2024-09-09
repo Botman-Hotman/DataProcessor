@@ -1,6 +1,7 @@
 import logging
 import time
 
+import numpy as np
 import pandas as pd
 from core.config import settings
 from core.utils import row_to_uuid, flatten_list
@@ -41,11 +42,6 @@ async def check_table_status(table_name: str, target_df: pd.DataFrame) -> None:
             create_table_query = f"""CREATE TABLE IF NOT EXISTS {settings.staging_schema}."{table_name}" ({", ".join(column_definitions)});"""
 
             await conn.execute(text(create_table_query))
-
-            # Add the unique constraint, set id as NOT NULL, and make it the primary key
-            await conn.execute(text(f"""ALTER TABLE {settings.staging_schema}."{table_name}" ADD CONSTRAINT unique_title UNIQUE (title);"""))
-            await conn.execute(text(f"""ALTER TABLE {settings.staging_schema}."{table_name}" ALTER COLUMN title SET NOT NULL;"""))
-            await conn.execute(text(f"""ALTER TABLE {settings.staging_schema}."{table_name}" ADD PRIMARY KEY (title);"""))
             await conn.commit()
 
 
@@ -64,37 +60,33 @@ async def import_data_to_staging(file_path: str) -> None:
         logging.info(f'{df.shape[0]} rows detected for {file_name}')
 
         # standardise columns and remove whitespace
-        df.columns = [f"column_{i}" if col.startswith('Unnamed') else col.strip().replace(' ', '_').lower() for i, col in enumerate(df.columns)]
+        df.columns = [f"column_{i}" if col.startswith('Unnamed') or col == 'top related titles' else col.strip().replace(' ', '_').lower() for i, col in enumerate(df.columns)]
 
-        cols_to_keep = ["title", "pdl_count", "top_related_titles"]
+        cols_to_keep = df[[col for col in df.columns if 'column_' not in col]].columns.tolist()
 
-        # Identify the columns beyond the first three (the ones to flatten)
-        cols_to_flatten = df.columns[3:]
+        # Identify the columns that were imported without a title
+        cols_to_flatten = df[[col for col in df.columns if not 'column_' not in col]].columns.tolist()
 
         # Create a new DataFrame where each row's flattened values are combined into a list
-        df['related_titles'] = df[cols_to_flatten].apply(lambda row: row.dropna().tolist(), axis=1)
+        df['top_related_titles'] = df[cols_to_flatten].apply(lambda row: row.str.strip().str.lower().dropna().tolist(), axis=1)
 
         # Keep only the first three columns and the new 'flattened_columns' column
-        df = df[cols_to_keep + ['related_titles']]
+        df = df[cols_to_keep + ['top_related_titles']]
+        df['title'] = df['title'].str.lower().str.strip()
+        df['title'] = df['title'].str.replace(r'[^a-zA-Z0-9\s]', '', regex=True)
+        df['title'] = df['title'].apply(lambda x: 'no data' if str(x).strip() == '' else x)
 
-        # recreate related titles as a list
+        df.fillna('no data', inplace=True)
+
+        # merge all top_related_titles based on the title to remove duplicates
         df = df.groupby('title').agg({
             'pdl_count': 'first',  # Keep the first pdl_count value for each group
-            'top_related_titles': 'first',  # Keep the first top_related_titles value
-            'related_titles': lambda x: list(set(flatten_list(x)))  # Flatten, clean up strings, remove duplicates
+            'top_related_titles': lambda x: list(set(flatten_list(x)))  # Flatten, remove duplicates
         }).reset_index()
-
-        # make an id column that is hash of the data Move the 'id' column to the first position
-        # df['id'] = df.apply(row_to_uuid, axis=1)
-        # columns = ['id'] + [col for col in df.columns if col != 'id']
-        # df = df[columns]
-
-        # make the staging table name file name with today's date as an integer
-        # table_name: str = f"{file_name.split('.')[0].strip().replace(' ', '_')}_{datetime.today().strftime('%Y%m%d')}"
-        table_name: str = f"{file_name.split('.')[0].strip().replace(' ', '_')}"
 
         # check that the table exists and perform db operations
         # to create the table based on the imported flat file
+        table_name: str = f"{file_name.split('.')[0].strip().replace(' ', '_')}"
         await check_table_status(table_name, df)
 
         time.sleep(1)
@@ -109,10 +101,7 @@ async def import_data_to_staging(file_path: str) -> None:
                     records = df.to_dict(orient='records')
 
                     # Create insert statement that
-                    stmt = insert(table).on_conflict_do_update(
-                        index_elements=['title'],  # Specify the primary key or unique column
-                        set_={col.name: col for col in table.c if col.name != 'title'}  # Update all columns except 'id'
-                    )
+                    stmt = insert(table)
 
                     # Execute the insert statement with the records
                     connection.execute(stmt, records)

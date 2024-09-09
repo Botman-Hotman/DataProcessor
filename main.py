@@ -5,6 +5,7 @@ from core.config import settings
 from logging.handlers import RotatingFileHandler
 from core.db import async_session_factory, async_engine, drop_all_schema, create_all_schema
 from services.directory_watcher import watch_folder
+from services.etl import create_etl, create_analysis
 import logging
 
 from services.schema_init import SchemaInit, populate_dimensions_on_startup
@@ -25,7 +26,8 @@ logging.basicConfig(
 # Create arg parser object
 parser = argparse.ArgumentParser()
 parser.add_argument("--watch", help="start the file watching system on a specified folder i.e. --watch 'imports'")
-parser.add_argument('--pipeline', help="run the etl pipeline")
+parser.add_argument('--pipeline', help="run the etl pipeline", action='store_true')
+parser.add_argument('--analysis', help="run the analysis scripts", action='store_true')
 
 async def init_database():
     """
@@ -62,4 +64,7 @@ if __name__ == "__main__":
         asyncio.run(watcher(args.watch))
 
     elif args.pipeline:
-        ...
+        create_etl()
+
+    elif args.analysis:
+        create_analysis()
