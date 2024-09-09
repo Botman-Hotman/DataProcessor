@@ -25,7 +25,9 @@ We make the assumption that an outside service is depositing the flat files on a
 ## Sql
 
 # Setup
-The project requires pipenv as means to manage dependencies. A folder for logs and imports /exports is needed as well. Not included in the push as it would be bad dev practice.
+The project requires pipenv as means to manage dependencies. 
+A folder for **logs** and **imports** / **exports** is needed as well. 
+Not included in the push as it would be bad dev practice as it could contain secrets!.
 
 $ `
 git clone git@github.com:Botman-Hotman/DataProcessor.git &&  
@@ -35,6 +37,7 @@ touch .env
 `
 
 # Environment Vars
+Add the following settings into the .env file created in the command above.
 The following vars are designed to work for the docker container, adjust if you wish to use a local instance of postgres.
 If **dev** is true it will drop and recreate all the tables within the database on every startup.
 
@@ -72,20 +75,33 @@ $ `docker-compose logs`
 
 
 
-### create data warehouse
+# ETL
 Now we have imported data into the staging schema we can run the next command to generate the data warehouse 
 and run the ETL pipelines. After this runs you will see the target tables in the database under datawarehouse schema. 
 
-$ `docker exec -it trigifytest-app python main.py --pipeline`
+$ `docker exec -it app python main.py --pipeline`
 
 
 # Analysis
 This will run the correct scripts to create views in the data warehouse of the target questions.
 
-$ `docker exec -it trigifytest-app python main.py --analysis`
+$ `docker exec -it app python main.py --analysis`
 
 
 # Tear down 
 remove the container and remove the app image.
 
 $ `docker-compose down && docker rmi trigifytest-app`
+
+
+
+# Conclusion
+
+* I would use views instead of making tables if the data is not large (< 1M rows).
+* I opted to transform the data as it was being pulled into the staging table, 
+this isn't very efficient if you want to make the functions reusable for any flat file, and it could be done in SQL as it is more efficent at this kind of operation. 
+* If the tables became to large clustering and partitioning could be used to make indexing them more efficient.
+
+## Challenges Faced
+The files format was not obvious from the get go but after reading that the related titles were orginally a list made it easier to plan the pipeline. 
+This system would face some issues if the table was updated with new and existing data. One work around would be to take a hash and converting to a UUID of the row data after cleaning it up and using this as primary key and using that to find existing data to update. 
