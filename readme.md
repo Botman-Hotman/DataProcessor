@@ -35,14 +35,14 @@ touch .env
 `
 
 # Environment Vars
+The following vars are designed to work for the docker container, adjust if you wish to use a local instance of postgres
+
 *  dev = True
 *  debug_logs = False
-*  db_string = 'postgresql//dev-user:password@localhost:5432/dev_db'
-*  db_string_async = "postgresql+asyncpg://dev-user:password@localhost:5432/dev_db"
+*  db_string = 'postgresql//dev-user:password@postgres:5432/dev_db'
+*  db_string_async = "postgresql+asyncpg://dev-user:password@postgres:5432/dev_db"
 *  echo_sql = False
 *  init_db = True
-*  staging_schema = 'staging'
-*  dw_schema = 'datawarehouse'
 *  staging_schema = 'staging'
 *  dw_schema = 'datawarehouse'
 
@@ -61,11 +61,11 @@ Put the target file in the root of the project and run below. The container is n
 
 $ `docker cp 2019_free_title_data.csv app:app/imports`
 
-And check the logs to see if the process ran successfully
+### check the logs to see if the process ran successfully
 
 $ `docker-compose logs`
 
-To tear down everything successfully and remove the app image.
+### Tear down everything successfully and remove the app image.
 
 $ `docker-compose down && docker rmi trigifytest-app`
 

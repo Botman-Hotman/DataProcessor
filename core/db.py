@@ -31,7 +31,7 @@ class MyBase:
 Base = declarative_base(cls=MyBase)
 
 
-def map_dtype_to_postgres(dtype):
+def map_dtype_to_postgres(dtype) -> str:
     """
     Function to map pandas data types to PostgreSQL types
     :param dtype:
@@ -43,6 +43,8 @@ def map_dtype_to_postgres(dtype):
         return 'FLOAT'
     elif pd.api.types.is_bool_dtype(dtype):
         return 'BOOLEAN'
+    elif pd.api.types.is_list_like(dtype) or pd.api.types.is_array_like(dtype):
+        return 'TEXT[]'
     else:
         return 'TEXT'
 

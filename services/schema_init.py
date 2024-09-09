@@ -21,7 +21,7 @@ class SchemaInit:
     @staticmethod
     async def populate_default_data(
             db: AsyncSession, model_class: Type[Base], default_data: List[Base]
-    ):
+    ) -> None:
         """
         Function to check if dimensions already exist, and to use the target SQL model to insert data
         :param db:
@@ -40,7 +40,7 @@ class SchemaInit:
             await db.aclose()
 
     @staticmethod
-    async def create_schema(db: AsyncSession, schema_name: str):
+    async def create_schema(db: AsyncSession, schema_name: str) -> None:
         await db.execute(text(f"CREATE SCHEMA IF NOT EXISTS {schema_name.strip().replace(' ', '_').lower()}"))
         await db.commit()
 

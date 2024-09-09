@@ -12,26 +12,29 @@ services:
       - "5432:5432"
     expose:
       - "5432"
-# Uncomment to persist database
-#    volumes:
-#      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "postgres", "-p", "5432", "-U", "dev-user", "-d", "dev_db"]
+      interval: 10s
+      retries: 3
     networks:
       - TrigifyTest
-
-  app:
-    container_name: app
-    build: .
-    command: python main.py
     # Uncomment to persist database
-#    volumes:
-#      - app-data:/app
-    ports:
-      - "8000:8000"
-    restart: always
-    depends_on:
-      - postgres
-    networks:
-      - TrigifyTest
+    #    volumes:
+    #      - postgres-data:/var/lib/postgresql/data
+
+#  app:
+#    container_name: app
+#    build: .
+#    # Uncomment to persist database
+##    volumes:
+##      - app-data:/app
+#    restart: always
+#    depends_on:
+#      postgres:
+#        condition: service_healthy
+#    command: python main.py
+#    networks:
+#      - TrigifyTest
 
 networks:
     TrigifyTest:

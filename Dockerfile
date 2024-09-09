@@ -6,12 +6,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 LABEL authors="joeedginton-foy"
-
-COPY Pipfile Pipfile.lock ./
-RUN python -m pip install --upgrade pip
-RUN pip install pipenv && pipenv install --dev --system --deploy
 WORKDIR /app
 COPY . /app
+
+RUN python -m pip install --upgrade pip
+RUN pip install pipenv && pipenv install --dev --system --deploy
+
 
 # Create the logs directory and set permissions
 RUN mkdir -p /app/logs && chmod 777 /app/logs

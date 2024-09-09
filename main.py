@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 
 from core.config import settings
@@ -21,6 +22,10 @@ logging.basicConfig(
     ]
 )
 
+# Create arg parser object
+parser = argparse.ArgumentParser()
+parser.add_argument("--watch", help="start the file watching system on a specified folder i.e. --watch 'imports'")
+parser.add_argument('--pipeline', help="run the etl pipeline")
 
 async def init_database():
     """
@@ -42,13 +47,19 @@ async def init_database():
             await populate_dimensions_on_startup(session)
 
 
-async def main():
+async def watcher(target_directory):
     await init_database()
 
     loop = asyncio.get_running_loop()
-    await watch_folder(loop, 'imports')
+    await watch_folder(loop, target_directory)
 
 
 if __name__ == "__main__":
-    # Run the main function asynchronously
-    asyncio.run(main())
+    args = parser.parse_args()
+
+    if args.watch:
+        # Run the main function asynchronously
+        asyncio.run(watcher(args.watch))
+
+    elif args.pipeline:
+        ...

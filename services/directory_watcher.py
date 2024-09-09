@@ -1,7 +1,7 @@
 import asyncio
 import os
 import logging
-from asyncio import AbstractEventLoop
+from asyncio import AbstractEventLoop, Future
 
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
@@ -9,22 +9,26 @@ from services.import_data import import_data_to_staging
 
 
 class WatcherHandler(FileSystemEventHandler):
-    def __init__(self, loop):
+    def __init__(self, loop: AbstractEventLoop):
         self.loop = loop  # Reference to the running event loop
 
     def on_created(self, event) -> None:
-        # Check if it's a file and not a directory
+        """
+        Extending the FileSystemEventHandler.on_created to run custom logic based on the flat file type
+        :param event:
+        :return:
+        """
+
         if not event.is_directory:
-            # Check if the file is a flat file (CSV in this case)
             if event.src_path.endswith('.csv'):
                 logging.info(f"Detected new CSV file: {os.path.basename(event.src_path)}")
 
-                future = asyncio.run_coroutine_threadsafe(
+                future: Future = asyncio.run_coroutine_threadsafe(
                     import_data_to_staging(event.src_path), self.loop
                 )
-                # Optionally handle any potential errors
+
                 try:
-                    result = future.result()  # This can raise exceptions if the task fails
+                    result = future.result()
                 except Exception as e:
                     logging.exception(f"Error scheduling task: {e}")
 
